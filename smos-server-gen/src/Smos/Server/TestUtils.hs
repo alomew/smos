@@ -38,7 +38,7 @@ withTestServer :: (ClientEnv -> IO a) -> IO a
 withTestServer func = do
   man <- Http.newManager Http.defaultManagerSettings
   runNoLoggingT
-    $ DB.withSqlitePool ":memory:" 1
+    $ DB.withSqlitePoolInfo (mkSqliteConnectionInfo ":memory:" & fkEnabled .~ False) 1
     $ \pool ->
       liftIO $ do
         let mkApp = do

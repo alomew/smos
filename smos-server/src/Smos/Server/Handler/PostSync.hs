@@ -10,13 +10,23 @@ import qualified Data.Mergeful.Persistent as Mergeful
 import Smos.Server.Handler.Import
 
 servePostSync :: AuthCookie -> SyncRequest -> SyncHandler SyncResponse
-servePostSync (AuthCookie un) request = do
+servePostSync (AuthCookie un) SyncRequest {..} = do
   mu <- runDB $ getBy $ UniqueUsername un
   case mu of
     Nothing -> throwError err404
     Just (Entity uid _) -> do
       syncResponseServerId <- asks serverEnvServerUUID
-      syncResponseItems <- runDB $ Mergeful.serverProcessSyncWithCustomIdQuery ServerFileUuid nextRandomUUID ServerFileTime [ServerFileUser ==. uid] readSyncFile (writeSyncFile uid) syncFileUpdates request
+      syncResponseItems <-
+        runDB $
+          Mergeful.serverProcessSyncWithCustomIdQuery
+            ServerFileUuid
+            nextRandomUUID
+            ServerFileTime
+            [ServerFileUser ==. uid]
+            readSyncFile
+            (writeSyncFile uid)
+            syncFileUpdates
+            syncRequestItems
       pure SyncResponse {..}
   where
     readSyncFile :: ServerFile -> (FileUUID, Mergeful.Timed SyncFile)
